@@ -1,8 +1,10 @@
 @echo off
 rem ============================================================
-rem  First-time push of this learning log to GitHub.
-rem  Run this ONCE in a normal terminal (double-click also works).
+rem  Set up this log repository on a NEW machine and push it.
+rem  Run this ONCE (double-click also works).
 rem  Requires Git for Windows: https://git-scm.com/download/win
+rem  NOTE: keep all text in this file ASCII-only. cmd.exe reads .cmd
+rem        as ANSI, so UTF-8 Chinese here would break the script.
 rem ============================================================
 setlocal
 set "REPO_URL=https://github.com/dicklooooong/loongarch-2k0300-log.git"
@@ -40,7 +42,7 @@ echo [3/6] Staging files...
 git add -A
 
 echo [4/6] Creating the first commit...
-git commit -m "chore: 初始化学习日志模板与目录结构" || echo       (nothing to commit, continuing)
+git commit -m "chore: init learning log structure and templates" || echo       nothing to commit, continuing
 
 echo [5/6] Linking remote: %REPO_URL%
 git remote remove origin >nul 2>nul
@@ -50,28 +52,24 @@ git remote -v
 echo [6/6] Pushing to GitHub...
 echo       A login window may pop up. Sign in with your GitHub account.
 echo       If asked for a password in the terminal, paste a Personal Access
-echo       Token (NOT your account password): GitHub > Settings >
-echo       Developer settings > Personal access tokens > Contents: Read and write
+echo       Token (NOT your account password): GitHub ^> Settings ^>
+echo       Developer settings ^> Personal access tokens ^> Contents: Read and write
 echo.
 git push -u origin main
 
 if errorlevel 1 (
   echo.
   echo [FAILED] Push did not succeed. Check:
-  echo   1. The remote repository exists and is EMPTY (no README added on GitHub).
-  echo   2. You are authenticated: run  git config --global credential.helper manager
-  echo      then retry, or clear cached credentials in Windows Credential Manager.
-  echo   3. Run  git pull --rebase origin main  if the remote already has commits.
+  echo   1. You are authenticated: git config --global credential.helper manager
+  echo   2. The remote already has commits: run  git pull --rebase origin main
+  echo      then push again. Do NOT force push unless you mean to.
   echo.
 ) else (
   echo.
-  echo [OK] Done. Your log is now at:
+  echo [OK] Done. Your log is at:
   echo      https://github.com/dicklooooong/loongarch-2k0300-log
   echo.
-  echo From now on, publish daily updates with three commands:
-  echo      git add .
-  echo      git commit -m "log(daily): YYYY-MM-DD topic"
-  echo      git push
+  echo Daily routine: double-click new-log.cmd to write, publish.cmd to upload.
   echo.
 )
 pause

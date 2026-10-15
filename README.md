@@ -32,8 +32,10 @@ loongarch-2k0300-log/
 ├── README.md                  # 本文件：使用说明与规范
 ├── GITHUB-SETUP.md            # Git 安装与 GitHub 推送的完整步骤与排错
 ├── init-and-push.cmd          # 首次推送：双击一次即可建库并推上 GitHub
-├── new-log.cmd                # 双击即创建今日日志（推荐）
+├── new-log.cmd                # 双击即创建今日日志（每天第一步）
 ├── new-log.ps1                # 上面的实际脚本，也可单独调用
+├── publish.cmd                # 双击即提交并推送到 GitHub（每天第二步）
+├── publish.ps1                # 上面的实际脚本，也可单独调用
 ├── .gitattributes             # 换行符与二进制文件规则
 ├── .gitignore
 ├── templates/                 # 模板（只改内容，不要删结构）
@@ -43,13 +45,13 @@ loongarch-2k0300-log/
 ├── logs/                      # 每日日志，按 年/月 分层
 │   └── 2026/
 │       └── 10/
-│           └── 2026-10-16.md  # 一份填好的示例
+│           └── 2026-10-16.md  # 第一篇日志（真实记录，可当参照）
 ├── reviews/                   # 每周复盘，按 年 分层
 │   └── 2026/
-│       └── 2026-W42.md        # 一份填好的示例
+│       └── 2026-W42.md        # 首周复盘
 ├── topics/                    # 专题笔记（可长期增补）
 │   ├── README.md              # 专题索引表（含 2K0300 待办清单）
-│   └── dev-env.md             # 一份填好的示例：开发环境与版本管理
+│   └── dev-env.md             # 首个专题：开发环境与版本管理
 └── assets/                    # 附件：原理图截图、波形、串口日志、接线照片
 ```
 
@@ -75,6 +77,9 @@ loongarch-2k0300-log/
 - 状态：`#已解决` `#待验证` `#有疑问`
 
 ## 五、日常使用流程
+
+> **最短流程就两步**：双击 [`new-log.cmd`](new-log.cmd) 写今天的日志 → 写完双击 [`publish.cmd`](publish.cmd) 发布上 GitHub。
+> 下面是"想记细一点"时的完整说明。
 
 **每天 5 分钟（收尾时做，别攒到周末）**
 
@@ -116,9 +121,13 @@ cd loongarch-2k0300-log
 
 **首次推送已完成**：本地仓库已初始化、远程 `origin` 已关联、首个提交已推送。
 
-[`init-and-push.cmd`](init-and-push.cmd) 可**重复运行**：它会按需 `git init`、提交当前改动、补上远程地址并推送，等价于下面三步的一键版。换新机器时也用它。
+**一键发布（推荐）**：双击 [`publish.cmd`](publish.cmd)，或运行 `.\publish.cmd "串口无输出排查"`。
+它会自动 `git add -A` → 用 `log(daily): 日期 主题` 提交 → `git push`；没有改动时只提示、不产生空提交。
+中文提交信息以 UTF-8 写入临时文件再提交，不会乱码，也不会弹出编辑器。
 
-**日常三步**：
+[`init-and-push.cmd`](init-and-push.cmd) 可**重复运行**：它会按需 `git init`、提交当前改动、补上远程地址并推送。换新机器时也用它。
+
+**手动三步**（一键脚本做的事）：
 
 ```bash
 git add .
