@@ -3,7 +3,9 @@
     把改动提交并推送到 GitHub（一键发布）。
 .DESCRIPTION
     等价于 git add -A → git commit -m "log(daily): 日期 主题" → git push。
-    提交信息用 UTF-8 写入临时文件再提交，避免中文乱码。
+    - 提交信息以 UTF-8 写入临时文件再提交，中文不乱码，也不会弹出编辑器
+    - 没有改动时不产生空提交
+    - 即使当前终端 PATH 里还没有 git（刚装完 Git 常见），也会去常见安装路径找
 .EXAMPLE
     .\publish.ps1 "串口无输出排查"
     .\publish.ps1            # 交互式输入主题
@@ -16,13 +18,23 @@ param(
 $ErrorActionPreference = 'Stop'
 Set-Location $PSScriptRoot
 
-if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
+# 解析 git：先在 PATH 里找，再回退到常见安装路径
+$git = (Get-Command git -ErrorAction SilentlyContinue).Source
+if (-not $git) {
+    $candidates = @(
+        (Join-Path $env:ProgramFiles 'Git\cmd\git.exe'),
+        (Join-Path ${env:ProgramFiles(x86)} 'Git\cmd\git.exe'),
+        (Join-Path $env:LOCALAPPDATA 'Programs\Git\cmd\git.exe')
+    )
+    $git = $candidates | Where-Object { $_ -and (Test-Path $_) } | Select-Object -First 1
+}
+if (-not $git) {
     Write-Host '未找到 git，请先安装 Git for Windows：https://git-scm.com/download/win' -ForegroundColor Red
     exit 1
 }
 
 # 有改动才提交
-$dirty = git status --porcelain
+$dirty = & $git status --porcelain
 if (-not $dirty) {
     Write-Host '没有需要提交的改动。' -ForegroundColor Yellow
 } else {
@@ -39,8 +51,8 @@ if (-not $dirty) {
     [System.IO.File]::WriteAllText($msgFile, $message, (New-Object System.Text.UTF8Encoding($false)))
 
     try {
-        git add -A
-        git commit -F $msgFile | Out-Host
+        & $git add -A
+        & $git commit -F $msgFile | Out-Host
         if ($LASTEXITCODE -ne 0) {
             Write-Host '提交失败，已中止（没有推送）。' -ForegroundColor Red
             exit 1
@@ -52,7 +64,7 @@ if (-not $dirty) {
 }
 
 Write-Host '正在推送到 GitHub...' -ForegroundColor Cyan
-git push
+& $git push
 if ($LASTEXITCODE -ne 0) {
     Write-Host '推送失败。常见原因：网络不通，或远程有新提交 —— 先执行 git pull --rebase 再重试。' -ForegroundColor Red
     exit 1
