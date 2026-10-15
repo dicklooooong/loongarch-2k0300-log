@@ -11,7 +11,10 @@
 #>
 [CmdletBinding()]
 param(
-    [string]$Topic
+    [string]$Topic,
+    # 默认用记事本：最简单、不会认错文件。想用 VS Code 就加 -Editor code
+    [ValidateSet('notepad', 'code')]
+    [string]$Editor = 'notepad'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -59,10 +62,15 @@ if (Test-Path $file) {
 Write-Host '[2/3] 正在打开编辑器……写完保存后关闭窗口，就会自动进入下一步。' -ForegroundColor Cyan
 Write-Host '      只填四格就够：做了什么 / 现象 vs 预期 / 卡点 / 明天第一步' -ForegroundColor DarkGray
 
-$code = (Get-Command code -ErrorAction SilentlyContinue).Source
+$code = $null
+if ($Editor -eq 'code') {
+    $code = (Get-Command code -ErrorAction SilentlyContinue).Source
+}
 if ($code) {
+    Write-Host '      用 VS Code 打开（关闭该标签页即表示写完）' -ForegroundColor DarkGray
     & $code --wait $file | Out-Null
 } else {
+    Write-Host '      用记事本打开（保存后关闭记事本即表示写完）' -ForegroundColor DarkGray
     Start-Process -FilePath 'notepad.exe' -ArgumentList ('"' + $file + '"') -Wait
 }
 Write-Host '[2/3] 编辑器已关闭。' -ForegroundColor Green
