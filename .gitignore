@@ -1,0 +1,13 @@
+# 系统与编辑器
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 编辑器临时文件
+.vscode/
+.idea/
+*.swp
+
+# 本地私密内容（不想公开的日志放这里，或改 .gitignore）
+private/
+*.local.md

@@ -1,0 +1,24 @@
+# 统一换行符，避免 Windows/Linux 协作时整文件 diff
+* text=auto
+
+# Markdown 与文本统一用 LF（GitHub 渲染与 git diff 都更干净）
+*.md   text eol=lf
+*.txt  text eol=lf
+*.yml  text eol=lf
+*.yaml text eol=lf
+
+# Windows 脚本保留 CRLF，否则部分环境双击/执行可能异常
+*.cmd  text eol=crlf
+*.bat  text eol=crlf
+*.ps1  text eol=crlf
+
+# 二进制附件不做换行转换
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.pdf  binary
+*.zip  binary
+
+# 让 GitHub 正确识别中文与语言统计
+*.md   linguist-documentation
