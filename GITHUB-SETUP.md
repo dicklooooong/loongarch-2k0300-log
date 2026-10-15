@@ -1,17 +1,24 @@
 # 把这份日志发布到 GitHub（首次配置 → 日常提交）
 
-**最省事的做法**：在普通终端里双击 [`init-and-push.cmd`](init-and-push.cmd)。
-它会自动配好身份、`git init`、首次提交、关联远程并推送。**唯一的硬前提是机器上已装 Git。**
+**当前状态：已经推送成功**——本地 `main` = 远程 `main` = `5554d49`。日常只需要 `git add` / `git commit` / `git push` 三步。
 
-本机（`E:\deepseek\第一个工作区`）的实测结论：
+本机（`E:\deepseek\第一个工作区`）的实测结论，重点是**同一个操作在不同权限层级下表现完全不同**：
 
-| 检查项 | 结果 | 结论 |
-| --- | --- | --- |
-| Git / GitHub CLI | 均不存在，常见安装路径全部 False | 必须先安装 |
-| `winget` | `winget.exe` 是 **0 字节**的应用执行别名，执行无输出、退出码 1 | 本环境中不可用，改用官方安装包 |
-| HTTPS 出网 | 所有站点均报 `schannel: SEC_E_NO_CREDENTIALS (0x8009030e)` | 受限 shell 中无法下载、也无法推送 |
+| 检查项 | 受限 shell 下 | 完整权限下 | 结论 |
+| --- | --- | --- | --- |
+| 安装 Git | `winget.exe` 是 0 字节应用执行别名，执行无输出、退出码 1 | `winget v1.29.380` 正常，成功装上 **Git 2.55.0.5** | 受限时改用官方安装包 |
+| HTTPS 出网 | 所有站点 `schannel: AcquireCredentialsHandle failed: SEC_E_NO_CREDENTIALS (0x8009030e)` | 连通；GitHub 另需 `http.schannelCheckRevoke=false` 绕开 `CRYPT_E_NO_REVOCATION_CHECK` | 换普通终端，或关闭吊销检查 |
+| 推送认证 | `Cannot prompt because user interactivity has been disabled` | `git push` 直接用 GCM 已存凭据成功，**无需手输 PAT** | 确认 `credential.helper manager` 生效 |
 
-> 因此：**安装与推送请在普通 PowerShell / 命令提示符窗口里做**，不要用受限的自动化 shell。
+> 遇到"什么都不通"时先别改方案：**换一档权限、换一个站点、换一个版本各测一次**，通常能立刻定位到是哪一层的问题。
+
+## 第 0 步之前：本仓库其实已经就绪
+
+- 本地仓库已 `git init` 并完成首次提交，远程已关联：`origin` = <https://github.com/dicklooooong/loongarch-2k0300-log.git>
+- 提交身份为**仓库级**配置（未改全局）：`dicklooooong` / `250634730+dicklooooong@users.noreply.github.com`
+- 远程建仓库时勾选过 README，已有 `e92fa3c Initial commit`；本次是**整合历史后快进推送**，没有强推
+
+> 所以下面第 1～4 步主要是"换新机器 / 重装环境"时的参考流程。
 
 ---
 
@@ -30,11 +37,12 @@
 **方式 A（推荐，任何环境都能用）**：下载官方安装包
 <https://git-scm.com/download/win> → 运行 → 一路默认即可（安装器会自己处理 PATH）。
 
-**方式 B（若你的终端里 winget 正常）**：
+**方式 B（winget，实测可用）**：
 
 ```powershell
-winget --version      # 先确认能打印版本；本机曾因别名为 0 字节而失败
+winget --version      # 受限 shell 里可能毫无输出、退出码 1（别名不可用），换普通终端再试
 winget install --id Git.Git -e --source winget --accept-package-agreements --accept-source-agreements
+# 实测：winget v1.29.380 + Git 2.55.0.5 安装成功，路径 C:\Program Files\Git\cmd\git.exe
 ```
 
 装完**必须新开一个终端窗口**（让 PATH 生效），然后验证：
@@ -125,13 +133,16 @@ git push
 | 现象 | 原因 | 解决 |
 | --- | --- | --- |
 | `无法将"git"项识别为 cmdlet` | 未安装，或装了但 PATH 未刷新 | 装完**新开终端**；用 `Test-Path` 区分两种原因 |
-| `winget` 无输出、退出码 1 | `winget.exe` 是 0 字节应用执行别名，受限进程调用无法启动 | 改用官方安装包下载 |
-| `schannel: SEC_E_NO_CREDENTIALS (0x8009030e)` | 该 shell 的 TLS 出网被策略阻断（所有站点同样报错） | 换到普通终端执行；不要在这个 shell 里做下载/推送 |
+| `winget` 无输出、退出码 1 | `winget.exe` 是 0 字节应用执行别名，受限进程调用无法启动 | 换普通终端／提高权限；或改用官方安装包下载 |
+| `schannel: SEC_E_NO_CREDENTIALS (0x8009030e)` | 该 shell 根本拿不到 TLS 凭据（**所有**站点同样报错） | 换到普通终端执行；不要在这个 shell 里做下载/推送 |
+| `CRYPT_E_NO_REVOCATION_CHECK (0x80092012)` | 凭据拿到了，但查不到证书吊销列表（OCSP/CRL 不可达） | `git config http.schannelCheckRevoke false`；curl 加 `--ssl-no-revoke` |
+| `Cannot prompt because user interactivity has been disabled` | 为防挂起设了 `credential.interactive=false`，把凭据读取也禁掉了 | 需要认证时不要禁用交互；配合 `credential.helper manager` |
+| `couldn't create signal pipe, Win32 error 5`（`sh.exe`/`true.exe`） | git 会拉起 **MSYS 的 sh** 来执行编辑器，而受限沙箱禁止命名管道 | 避免任何会启动编辑器的 git 操作：用 `commit -m`；冲突解完后 `git commit -m` + `git reset --hard <sha>` 收尾 |
 | `fatal: not a git repository` | 不在仓库目录内 | `cd` 到含 `.git` 的目录 |
 | 要求密码但 PAT 被拒 | 用了账号密码，或 PAT 缺 `Contents` 权限 | 重新生成 token，勾选目标仓库写权限 |
 | `Authentication failed` 而 PAT 正确 | 凭据管理器缓存了旧密码 | Windows 凭据管理器删除 `git:https://github.com` 后重试 |
-| 中文文件名显示为 `\xxx` | 未关闭 quotepath | `git config --global core.quotepath false` |
-| 推送被拒 `non-fast-forward` | 远程有本地没有的提交（例如建仓库时勾了 README） | `git pull --rebase origin main` 后重新 `git push` |
+| 中文文件名显示为 `\xxx` | 未关闭 quotepath | `git config core.quotepath false` |
+| 推送被拒 `non-fast-forward` | 远程有本地没有的提交（例如建仓库时勾了 README） | `git fetch` 后整合历史（rebase/merge）再推；**不要**直接强推 |
 | 运行 `.ps1` 报"禁止运行脚本" | 执行策略为 Restricted | 用 `.cmd` 启动器，或 `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` |
 | 中文 `.ps1` 报 `Unexpected token` | 文件无 BOM，PS 5.1 按 ANSI 解析 | 另存为 **UTF-8 with BOM** |
 | 误提交了不该公开的内容 | — | 立即删除并提交；同时视为已泄露（历史仍可查），必要时用 `git filter-repo` 清理 |

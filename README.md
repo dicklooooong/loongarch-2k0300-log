@@ -7,6 +7,7 @@
 - 一切以 Markdown 纯文本保存，不依赖任何软件；GitHub 上自动获得在线浏览与全文搜索
 
 > 本仓库对应的远程地址：<https://github.com/dicklooooong/loongarch-2k0300-log>
+> 状态：已推送并与远程一致（最新提交 `5554d49`）。日常只需 `git add` → `git commit` → `git push`。
 
 ---
 
@@ -16,7 +17,7 @@
 | --- | --- | --- |
 | 芯片 / SoC | 龙芯 2K0300 | 核心架构 LoongArch |
 | 开发板型号 | 久久派（2K0300） | 记清板卡版本 / 批次，便于对应手册与原理图 |
-| 主机系统 | Windows（`E:\deepseek\第一个工作区`） | 记录所用发行版与版本 |
+| 主机系统 | Windows（`E:\deepseek\第一个工作区`） | PowerShell 5.1；版本管理 Git 2.55.0 |
 | 交叉工具链 | _待填_ | 例如 `loongarch64-linux-gnu-*` 前缀（以实际为准）+ 版本号 |
 | 串口参数 | _待填_ | 端口 / 波特率，例如 `COM3, 115200, 8N1` |
 | 调试手段 | _待填_ | 串口 / JTAG / 网口 tftp / SD 卡 |
@@ -113,7 +114,9 @@ cd loongarch-2k0300-log
 
 ## 七、提交到 GitHub
 
-**首次推送**：装好 Git 后，双击 [`init-and-push.cmd`](init-and-push.cmd)，它会自动完成配置身份 → `git init` → 首次提交 → 关联远程 → 推送，并打印后续日常命令。远程地址已写死在脚本里。
+**首次推送已完成**：本地仓库已初始化、远程 `origin` 已关联、首个提交已推送。
+
+[`init-and-push.cmd`](init-and-push.cmd) 可**重复运行**：它会按需 `git init`、提交当前改动、补上远程地址并推送，等价于下面三步的一键版。换新机器时也用它。
 
 **日常三步**：
 

@@ -33,10 +33,10 @@ tags: [环境搭建, 工具链, 版本管理]
 | 子模块 | 掌握程度 | 备注 |
 | --- | --- | --- |
 | 环境事实核查（有什么、在哪、什么版本） | 会用 | 已形成固定检查命令，见下 |
-| 版本管理（Git） | 未开始 | 本机尚未安装，是当前唯一阻塞项 |
-| 远端授权（PAT / SSH） | 了解 | 两条路径均已写清步骤，待实机验证 |
+| 版本管理（Git） | 会用 | Git 2.55.0 已装（winget 安装），首个提交已推送 |
+| 远端授权（PAT / SSH） | 会用 | 实测：完整权限下 GCM 直接复用 Windows 凭据管理器中的凭据，未手输 PAT |
 | 日志与目录约定 | 会用 | 见仓库 `README.md` |
-| 交叉工具链接入 | 未开始 | 依赖 Git 装好后一并做 |
+| 交叉工具链接入 | 未开始 | 下一步（阻塞已解除） |
 
 ## 四、核心概念
 
@@ -63,6 +63,23 @@ Test-Path "C:\Program Files\Git\cmd\git.exe"                # False = 确实没�
 
 ## 五、实践记录（按时间倒序追加）
 
+### 2026-10-16（同日后续）打通首次推送
+
+- 环境：同一台 Windows 主机，改用完整权限的 shell
+- 操作与命令：
+  1. `winget install --id Git.Git -e --source winget` → 装上 **Git 2.55.0.5**
+  2. 用 GitHub API 取账号 id，配置提交身份为 `id+username@users.noreply.github.com`
+  3. `git init` → `git add` → `git commit` → `git remote add origin`
+  4. `git ls-remote origin` → 发现远程已有 `Initial commit`，于是 `git fetch` + 整合历史
+  5. 解决 `README.md` 冲突（保留自己版本，补入板卡名「久久派」）
+  6. `git push -u origin main`
+- 现象与结论：
+  - **同一批命令在受限权限下全部失败、在完整权限下全部成功** ⇒ 之前的"无法安装/无法出网"只对受限模式成立
+  - TLS 报错从 `SEC_E_NO_CREDENTIALS` 变为 `CRYPT_E_NO_REVOCATION_CHECK` ⇒ 前者是拿不到凭据，后者是拿到凭据后卡在吊销检查，用 `http.schannelCheckRevoke=false` 解决
+  - `git rebase --continue` 报 `couldn't create signal pipe, Win32 error 5` ⇒ git 需要拉起 MSYS `sh.exe` 执行编辑器，而沙箱禁止命名管道；改用 `git commit -m` + `git reset --hard <sha>` 收尾即可
+  - 推送成功：`e92fa3c..5554d49  main -> main`，远程与本地 `main` 完全一致
+- 证据：`logs/2026/10/2026-10-16.md`
+
 ### 2026-10-16 环境核查，确认阻塞项
 
 - 环境：Windows，PowerShell 5.1
@@ -75,6 +92,8 @@ Test-Path "C:\Program Files\Git\cmd\git.exe"                # False = 确实没�
   1. 当前环境**无法安装 Git**（winget 不可用、无法下载安装包）
   2. 即使装上 Git，**当前 shell 也无法访问 GitHub**（TLS 层被阻断）
   3. 因此推送必须在**普通终端**里由本人执行 → 已提供 `init-and-push.cmd`
+- 后续更正（同日）：换到完整权限后，winget 与 HTTPS 均恢复正常，上述第 1、2 条**只对受限模式成立**。
+  教训：结论必须写清"在什么权限/环境下成立"，否则会误导未来的自己。
 - 证据：`logs/2026/10/2026-10-16.md`
 
 ## 六、踩坑清单（越用越长，排错先看这里）
@@ -87,6 +106,10 @@ Test-Path "C:\Program Files\Git\cmd\git.exe"                # False = 确实没�
 | 运行 `.ps1` 报"禁止运行脚本" | 默认执行策略为 Restricted | 用 `.cmd` 启动器（已内置 `-ExecutionPolicy Bypass`），或 `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` | Windows PS 5.1 |
 | 中文 `.ps1` 报 `Unexpected token` | 文件无 BOM，PS 5.1 按 ANSI 解析 | 脚本另存为 **UTF-8 with BOM** | Windows PS 5.1 |
 | `.cmd` 里中文注释被当成命令执行 | cmd 按 ANSI 读取，UTF-8 中文乱码破坏行首关键字 | `.cmd` 注释只用 ASCII | Windows cmd |
+| `CRYPT_E_NO_REVOCATION_CHECK (0x80092012)` | 拿到凭据后卡在证书吊销检查（查不到 OCSP/CRL） | `git config http.schannelCheckRevoke false`；curl 用 `--ssl-no-revoke` | Git 2.55 / curl 8.x |
+| `fatal error - couldn't create signal pipe, Win32 error 5` | git 拉起 MSYS `sh.exe`/`true.exe` 执行编辑器，沙箱禁止命名管道 | 避免任何会启动编辑器的 git 操作：用 `commit -m`，冲突解完后 `git commit -m` + `git reset --hard <sha>` 收尾 | Git for Windows 在受限沙箱内 |
+| `Cannot prompt because user interactivity has been disabled` | 为了防挂起设了 `credential.interactive=false`，反而禁掉了凭据读取 | 需要认证时不要禁用交互；确认 `credential.helper manager` 可读已存凭据 | Git 2.55 |
+| 推送被拒 `non-fast-forward` | 建仓库时勾了 README，远程已有提交 | 先 `git fetch`，再整合历史（rebase/merge）后推送；**不要**直接强推 | Git 2.55 |
 
 ## 七、参考资料
 
@@ -99,13 +122,15 @@ Test-Path "C:\Program Files\Git\cmd\git.exe"                # False = 确实没�
 
 ## 八、复述检验（能讲清才算学会）
 
-我能不查资料讲清：为什么"命令找不到"要分两种原因排查；为什么同一个 TLS 报错在所有
-站点上都出现时，应怀疑环境而不是站点；以及 `.ps1` 的 BOM、`.cmd` 的 ANSI 这两个
-"看不见的编码坑"分别在什么条件下咬人。
+我能不查资料讲清：为什么"命令找不到"要分两种原因排查；为什么**同一个操作在不同权限层级下
+表现完全不同**（这是本次最大的教训）；`SEC_E_NO_CREDENTIALS` 与 `CRYPT_E_NO_REVOCATION_CHECK`
+分别卡在 TLS 握手的哪一步、各怎么绕；以及 `.ps1` 的 BOM、`.cmd` 的 ANSI、MSYS 的命名管道
+这三类"看不见的环境坑"分别在什么条件下咬人。
 
 ## 九、下一步
 
-- [ ] 在普通终端安装 Git for Windows，`git --version` 验证
-- [ ] 运行 `init-and-push.cmd` 完成首次推送
-- [ ] 推送成功后，把「远端授权」一行的掌握程度更新为"会用"，并回填本文件第二节的版本事实
-- [ ] 接入 2K0300 交叉工具链后，在本文件新增一节记录版本与验证命令
+- [x] 安装 Git for Windows，`git --version` 验证 → Git 2.55.0.5
+- [x] 完成首次推送 → `e92fa3c..5554d49  main -> main`
+- [x] 把「远端授权」一行的掌握程度更新为"会用"，并回填本文件第二节的版本事实
+- [ ] 接入 2K0300（久久派）交叉工具链，在本文件新增一节记录版本与第一条验证命令
+- [ ] 板子上电，串口能看到启动输出，并写第一篇面向硬件的日志
