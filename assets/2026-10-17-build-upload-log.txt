@@ -1,0 +1,73 @@
+===== 1. 免密登录测试（公钥） =====
+板卡登录成功: Linux LoongOS 4.19.190+ #3 SMP Mon Jun 3 10:20:57 CST 2024 loongarch64 loongarch64 loongarch64 GNU/Linux
+上传目录: drwx------ 3 root root 4096 Mar 24  2021 /home/root
+>>> 公钥认证 OK
+
+===== 2. 运行 ./build.sh（会自动清理 out/ → cmake → make -j8 → scp 上传） =====
+[32m[INFO] 准备进入目录: /home/seekfree/LS2K0300_Library/LS2K300_Library/Seekfree_LS2K0300_Opensource_Library/project/user/../out[0m
+[32m[INFO] 开始清理当前目录，仅保留 本文件夹作用.txt[0m
+[32m[INFO] 执行cmake编译: cmake /home/seekfree/LS2K0300_Library/LS2K300_Library/Seekfree_LS2K0300_Opensource_Library/project/user/../user[0m
+-- The C compiler identification is GNU 8.3.0
+-- The CXX compiler identification is GNU 8.3.0
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /opt/ls_2k0300_env/loongson-gnu-toolchain-8.3-x86_64-loongarch64-linux-gnu-rc1.6/bin/loongarch64-linux-gnu-gcc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /opt/ls_2k0300_env/loongson-gnu-toolchain-8.3-x86_64-loongarch64-linux-gnu-rc1.6/bin/loongarch64-linux-gnu-g++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Found OpenCV: /opt/ls_2k0300_env/opencv_4_10_build (found version "4.10.0") 
+-- OpenCV_INCLUDE: /opt/ls_2k0300_env/opencv_4_10_build/include/opencv4, OpenCV_LIBS: opencv_calib3d;opencv_core;opencv_dnn;opencv_features2d;opencv_flann;opencv_gapi;opencv_highgui;opencv_imgcodecs;opencv_imgproc;opencv_ml;opencv_objdetect;opencv_photo;opencv_stitching;opencv_video;opencv_videoio
+-- Configuring done (0.9s)
+-- Generating done (0.0s)
+-- Build files have been written to: /home/seekfree/LS2K0300_Library/LS2K300_Library/Seekfree_LS2K0300_Opensource_Library/project/out
+[32m[INFO] cmake执行成功，开始执行 make -j8 编译项目...[0m
+[  4%] Building CXX object CMakeFiles/project.dir/home/seekfree/LS2K0300_Library/LS2K300_Library/Seekfree_LS2K0300_Opensource_Library/libraries/zf_common/zf_common_fifo.cpp.o
+[  8%] Building CXX object CMakeFiles/project.dir/main.cpp.o
+[ 17%] Building CXX object CMakeFiles/project.dir/home/seekfree/LS2K0300_Library/LS2K300_Library/Seekfree_LS2K0300_Opensource_Library/libraries/zf_device/zf_device_dl1x.cpp.o
+[ 17%] Building CXX object CMakeFiles/project.dir/home/seekfree/LS2K0300_Library/LS2K300_Library/Seekfree_LS2K0300_Opensource_Library/libraries/zf_device/zf_device_imu.cpp.o
+[ 21%] Building CXX object CMakeFiles/project.dir/home/seekfree/LS2K0300_Library/LS2K300_Library/Seekfree_LS2K0300_Opensource_Library/libraries/zf_device/zf_device_ips200_fb.cpp.o
+[ 30%] Building CXX object CMakeFiles/project.dir/home/seekfree/LS2K0300_Library/LS2K300_Library/Seekfree_LS2K0300_Opensource_Library/libraries/zf_device/zf_device_tft180_fb.cpp.o
+[ 30%] Building CXX object CMakeFiles/project.dir/home/seekfree/LS2K0300_Library/LS2K300_Library/Seekfree_LS2K0300_Opensource_Library/libraries/zf_common/zf_common_function.cpp.o
+[ 34%] Building CXX object CMakeFiles/project.dir/home/seekfree/LS2K0300_Library/LS2K300_Library/Seekfree_LS2K0300_Opensource_Library/libraries/zf_common/zf_common_font.cpp.o
+[ 39%] Building CXX object CMakeFiles/project.dir/home/seekfree/LS2K0300_Library/LS2K300_Library/Seekfree_LS2K0300_Opensource_Library/libraries/zf_device/zf_device_uvc.cpp.o
+[ 43%] Building CXX object CMakeFiles/project.dir/home/seekfree/LS2K0300_Library/LS2K300_Library/Seekfree_LS2K0300_Opensource_Library/libraries/zf_driver/zf_driver_adc.cpp.o
+[ 47%] Building CXX object CMakeFiles/project.dir/home/seekfree/LS2K0300_Library/LS2K300_Library/Seekfree_LS2K0300_Opensource_Library/libraries/zf_driver/zf_driver_delay.cpp.o
+[ 52%] Building CXX object CMakeFiles/project.dir/home/seekfree/LS2K0300_Library/LS2K300_Library/Seekfree_LS2K0300_Opensource_Library/libraries/zf_driver/zf_driver_encoder.cpp.o
+[ 56%] Building CXX object CMakeFiles/project.dir/home/seekfree/LS2K0300_Library/LS2K300_Library/Seekfree_LS2K0300_Opensource_Library/libraries/zf_driver/zf_driver_file_buffer.cpp.o
+[ 60%] Building CXX object CMakeFiles/project.dir/home/seekfree/LS2K0300_Library/LS2K300_Library/Seekfree_LS2K0300_Opensource_Library/libraries/zf_driver/zf_driver_file_string.cpp.o
+[ 65%] Building CXX object CMakeFiles/project.dir/home/seekfree/LS2K0300_Library/LS2K300_Library/Seekfree_LS2K0300_Opensource_Library/libraries/zf_driver/zf_driver_gpio.cpp.o
+[ 69%] Building CXX object CMakeFiles/project.dir/home/seekfree/LS2K0300_Library/LS2K300_Library/Seekfree_LS2K0300_Opensource_Library/libraries/zf_driver/zf_driver_pit.cpp.o
+[ 73%] Building CXX object CMakeFiles/project.dir/home/seekfree/LS2K0300_Library/LS2K300_Library/Seekfree_LS2K0300_Opensource_Library/libraries/zf_driver/zf_driver_pit_fd.cpp.o
+[ 78%] Building CXX object CMakeFiles/project.dir/home/seekfree/LS2K0300_Library/LS2K300_Library/Seekfree_LS2K0300_Opensource_Library/libraries/zf_driver/zf_driver_pwm.cpp.o
+[ 82%] Building CXX object CMakeFiles/project.dir/home/seekfree/LS2K0300_Library/LS2K300_Library/Seekfree_LS2K0300_Opensource_Library/libraries/zf_driver/zf_driver_tcp_client.cpp.o
+[ 86%] Building CXX object CMakeFiles/project.dir/home/seekfree/LS2K0300_Library/LS2K300_Library/Seekfree_LS2K0300_Opensource_Library/libraries/zf_driver/zf_driver_udp.cpp.o
+[ 91%] Building CXX object CMakeFiles/project.dir/home/seekfree/LS2K0300_Library/LS2K300_Library/Seekfree_LS2K0300_Opensource_Library/libraries/zf_components/seekfree_assistant/seekfree_assistant.cpp.o
+[ 95%] Building CXX object CMakeFiles/project.dir/home/seekfree/LS2K0300_Library/LS2K300_Library/Seekfree_LS2K0300_Opensource_Library/libraries/zf_components/seekfree_assistant/seekfree_assistant_interface.cpp.o
+[100%] Linking CXX executable project
+[100%] Built target project
+[32m[INFO] 待上传文件/目录：project[0m
+[32m[INFO] 开始上传文件到 root@192.168.137.140:/home/root/[0m
+[32m[INFO] ✅ 所有操作执行完成：清理目录 → cmake编译 → make编译 → 文件上传 均成功！[0m
+build.sh 退出码 = 0
+
+===== 3. 本地产物 =====
+总计 120
+-rw-rw-r-- 1 seekfree seekfree    28  3月 31  2026 本文件夹作用.txt
+-rw-r--r-- 1 seekfree seekfree 16069 10月 17 02:14 CMakeCache.txt
+drwxr-xr-x 6 seekfree seekfree  4096 10月 17 02:14 CMakeFiles
+-rw-r--r-- 1 seekfree seekfree  1860 10月 17 02:14 cmake_install.cmake
+-rw-r--r-- 1 seekfree seekfree 71651 10月 17 02:14 Makefile
+-rwxr-xr-x 1 seekfree seekfree 22928 10月 17 02:14 project
+
+===== 4. 板卡上是否收到文件 =====
+total 24
+-rwxr-xr-x 1 root root 22928 Mar 24 10:36 project
+--- 文件类型 ---
+ 7f 45 4c 46 02 01 01 00 00 00 00 00 00 00 00 00
+ 02 00 02 01
+
+===== DONE =====

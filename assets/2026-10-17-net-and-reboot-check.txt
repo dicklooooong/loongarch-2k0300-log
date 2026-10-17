@@ -1,0 +1,94 @@
+===== guest-nic2.out =====
+===== 1. 现有网卡 =====
+lo               UNKNOWN        127.0.0.1/8 ::1/128 
+ens33            UP             192.168.137.128/24 fe80::cb5f:ed30:4d2:9625/64 
+ens37            UP             fe80::8635:6291:ff23:803f/64 
+--- 默认路由走哪块 ---
+default via 192.168.137.2 dev ens33 proto dhcp src 192.168.137.128 metric 100 
+
+===== 2. 找出桥接的那块网卡（有 carrier 且不是 NAT 那块） =====
+  ens33  carrier=1  speed=1000  ip=192.168.137.128/24
+  ens37  carrier=1  speed=1000  ip=
+>> 判定桥接网卡为: ens37
+
+===== 3. 配置 NM 连接 board-link（192.168.137.150/32 + 精确路由，不抢默认路由） =====
+连接 "board-link" (968e0589-369e-4f4c-9eb1-095c76a9e14b) 已成功添加。
+连接已成功激活（D-Bus 活动路径：/org/freedesktop/NetworkManager/ActiveConnection/5）
+
+===== 4. 结果 =====
+lo               UNKNOWN        127.0.0.1/8 ::1/128 
+ens33            UP             192.168.137.128/24 fe80::cb5f:ed30:4d2:9625/64 
+ens37            UP             192.168.137.150/32 
+--- 路由表 ---
+default via 192.168.137.2 dev ens33 proto dhcp src 192.168.137.128 metric 100 
+192.168.137.0/24 dev ens33 proto kernel scope link src 192.168.137.128 metric 100 
+192.168.137.1 dev ens37 proto static scope link metric 101 
+192.168.137.140 dev ens37 proto static scope link metric 101 
+
+===== 5. 测 Windows ICS 网口 192.168.137.1（应该走 ens37） =====
+--- 192.168.137.1 ping statistics ---
+2 packets transmitted, 2 received, 0% packet loss, time 1049ms
+rtt min/avg/max/mdev = 0.284/0.368/0.453/0.084 ms
+192.168.137.1 lladdr f8:ed:fc:e2:9f:e9 REACHABLE 
+
+===== 6. 测板卡 192.168.137.140 =====
+
+--- 192.168.137.140 ping statistics ---
+3 packets transmitted, 0 received, +3 errors, 100% packet loss, time 2043ms
+pipe 3
+>>> 板卡 22 端口 不通（板卡侧网络/IP 还没起来）
+192.168.137.140 dev ens37 FAILED 
+
+===== 7. 测外网（应该走 NAT 的默认路由） =====
+2 packets transmitted, 2 received, 0% packet loss, time 1002ms
+rtt min/avg/max/mdev = 38.297/41.974/45.652/3.677 ms
+===== DONE =====
+
+===== guest-postboot.out =====
+===== 1. 虚拟机侧：板卡是否可达 =====
+--- 192.168.137.140 ping statistics ---
+3 packets transmitted, 3 received, +6 duplicates, 0% packet loss, time 2004ms
+rtt min/avg/max/mdev = 2.129/3.190/4.445/1.125 ms
+22 端口 OPEN ✅
+
+===== 2. 免密登录是否仍然有效 =====
+登录成功
+开机时长: 194 秒（数值小=刚重启过）
+ 10:28:19 up 3 min,  1 user,  load average: 0.07, 0.15, 0.07
+
+===== 3. eth0 是否由 rc.local 自动配上（没人手工配过） =====
+eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 192.168.137.140  netmask 255.255.255.0  broadcast 192.168.137.255
+        inet6 fe80::6648:48ff:fe48:4860  prefixlen 64  scopeid 0x20<link>
+--- 路由 ---
+Kernel IP routing table
+Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+0.0.0.0         0.0.0.0         255.255.255.255 UH    0      0        0 eth0
+0.0.0.0         0.0.0.0         0.0.0.0         U     0      0        0 eth0
+
+===== 4. OpenCV 软链与文件是否还在 =====
+lrwxrwxrwx 1 root root 28 Mar 24  2021 /opt/ls_2k0300_env/opencv_4_10_build -> /home/root/opencv_4_10_build
+/home/root/opencv_4_10_build/lib/libopencv_core.so.410
+51M	/home/root/opencv_4_10_build
+
+===== 5. 重启后 demo 还能不能跑 =====
+退出码=124（124=正常运行被超时结束 ✅）
+
+===== 6. 板卡上的关键文件清单 =====
+total 28
+drwxrwxr-x 6 1000 1000  4096 Mar 24  2021 opencv_4_10_build
+-rwxr-xr-x 1 root root 22928 Mar 24  2021 project
+--- rc.local 备份还在吗 ---
+-rwxr-xr-x 1 root root 721 Mar 24  2021 /etc/rc.local
+-rwxr-xr-x 1 root root 134 Mar 24  2021 /etc/rc.local.bak-dsh
+
+===== 7. 顺手再跑一次完整 build.sh（确认重启后依然一键编译+上传） =====
+[ 95%] Building CXX object CMakeFiles/project.dir/home/seekfree/LS2K0300_Library/LS2K300_Library/Seekfree_LS2K0300_Opensource_Library/libraries/zf_components/seekfree_assistant/seekfree_assistant_interface.cpp.o
+[100%] Linking CXX executable project
+[100%] Built target project
+[32m[INFO] 待上传文件/目录：project[0m
+[32m[INFO] 开始上传文件到 root@192.168.137.140:/home/root/[0m
+[32m[INFO] ✅ 所有操作执行完成：清理目录 → cmake编译 → make编译 → 文件上传 均成功！[0m
+build.sh 退出码=0
+===== DONE =====
+
