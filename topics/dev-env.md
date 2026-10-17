@@ -39,6 +39,7 @@ tags: [环境搭建, 工具链, 版本管理]
 | 日志与目录约定 | 会用 | 见仓库 `README.md` |
 | 交叉工具链接入 | 会用 | rc1.6 已接入，虚拟机内编译出 ELF64 LoongArch（2026-10-17） |
 | 板卡接入与文件上传 | 会用 | 虚拟机 → 板卡免密 scp；`./build.sh` 一键"编译+上传"；实机重启后已验证 |
+| 内核编译与设备树 | 入门 | 4.19 内核已能编出 `vmlinuz` + 久久派 WiFi 版 dtb；设备树还没改（文档该章未写完） |
 
 ## 四、核心概念
 
@@ -106,6 +107,30 @@ ssh root@192.168.137.140 'mkdir -p /opt/ls_2k0300_env && \
 
 - 证据：`logs/2026/10/2026-10-17.md`、`assets/2026-10-17-build-upload-log.txt`、`assets/2026-10-17-net-and-reboot-check.txt`
 
+### 2026-10-17（同日续）第 16 页：编译内核
+
+- 环境：同上；内核源码 `~/LS2K0300_Library/linux-4.19-202506`（4.19.190+）
+- 关键判断：板子是**久久派 WiFi 版**。内核树里有 4 个久久派 dts：`pai_99` / `_wifi` / `_tfcard` 的 memory 都是 238 MB + 256 MB，只有 `_plus` 是 238 MB + **768 MB**；4 个文件**都没有 `model` 行**（都继承 `loongson,generic`），所以只能靠内存大小/实际硬件区分，不能只看文件名猜
+- 操作与命令：
+
+```bash
+cd ~/LS2K0300_Library/linux-4.19-202506
+cp .config .config.bak-dsh
+# 默认是 coreboard（逐飞核心板），直接编会做出核心板内核 → 改成久久派 WiFi 版
+sed -i 's|^CONFIG_BUILTIN_DTB_NAME=.*|CONFIG_BUILTIN_DTB_NAME="loongson_2k0300_pai_99_wifi"|' .config
+export PATH=/opt/ls_2k0300_env/loongson-gnu-toolchain-8.3-x86_64-loongarch64-linux-gnu-rc1.6/bin:$PATH
+make ARCH=loongarch CROSS_COMPILE=loongarch64-linux-gnu- olddefconfig   # 非交互补默认值
+make ARCH=loongarch CROSS_COMPILE=loongarch64-linux-gnu- -j8
+```
+
+- 现象与结论：
+  - **8 核实测 3 分 16 秒编完**，0 错误 / 862 条告警（内核常态）；文档说"可能会持续很久"，实际取决于配置规模
+  - 产物（都在**源码根目录**）：`vmlinux` 23 MB、`vmlinuz` 5.6 MB（ELF64 LoongArch、statically linked、stripped）、`vmlinuz.efi` 5.6 MB、`System.map` 4 MB；dtb 在 `arch/loongarch/boot/dts/loongson/loongson_2k0300_pai_99_wifi.dtb`（22 KB），日志里 `DTC → DTB → AS → AR built-in.a` 说明**已编进内核**
+  - 踩到自己：一开始去 `arch/loongarch/boot/vmlinuz` 找产物，没找到就误判"make 不产出 vmlinuz"，其实普通 `make` 结尾就有 `LD vmlinuz` / `STRIP vmlinuz` / `LD vmlinuz.efi`
+  - 想"只编某个 dtb"**走不通**：`make arch/loongarch/boot/dts/loongson/xxx.dtb` 会报
+    `没有规则可制作目标"arch/loongarch/boot/dts/arch/loongarch/boot/dts/loongson/xxx.dtb"`（这棵树的 dts/Makefile 只编 `.config` 里指定的那一个）
+- 证据：`logs/2026/10/2026-10-17.md`
+
 ### 2026-10-16（同日后续）打通首次推送
 
 - 环境：同一台 Windows 主机，改用完整权限的 shell
@@ -159,6 +184,9 @@ ssh root@192.168.137.140 'mkdir -p /opt/ls_2k0300_env && \
 | `command -v udhcpc` 说没有，其实存在 | 非交互 SSH 会话的 `PATH` 只有 `/usr/bin:/bin`，看不到 `/sbin`、`/usr/sbin` | 先 `export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin`，或用绝对路径 | LoongOS（Dropbear ssh） |
 | `error while loading shared libraries: libopencv_gapi.so.410` | 板卡没有 OpenCV 运行时；且程序记录的 `RPATH` 是交叉编译路径 `/opt/ls_2k0300_env/opencv_4_10_build/lib` | 传 `opencv_4_10_build` 到板卡 `/home/root/`，再把 RPATH 路径做成软链接（板卡无 `ldconfig`） | OpenCV 4.10 / LoongOS |
 | `sh: /etc/ld.so.conf.d/opencv.conf: No such file or directory`，且没有 `ldconfig` | 该 rootfs 未装 ldconfig、也没有 `ld.so.conf.d` 目录（文档第 10 页假设它存在） | 不依赖 ldconfig：用 RPATH 软链接，或运行时 `LD_LIBRARY_PATH=` 指定 | LoongOS 4.19.190+ |
+| 文档里找不到 `CONFIG_DUILTIN_DTB_NAME` | 文档拼写错误，实际选项是 `CONFIG_BUILTIN_DTB_NAME`（BUILTIN）；且默认值是核心板 `seekfree_2k0300_coreboard` | 直接 `sed`/`menuconfig` 改成 `loongson_2k0300_pai_99_wifi`（久久派 4 个 dts 都没有 `model` 行，只能按内存/硬件区分） | 内核 4.19.190+ |
+| `make arch/loongarch/boot/dts/loongson/xxx.dtb` → `没有规则可制作目标"arch/loongarch/boot/dts/arch/loongarch/boot/dts/loongson/xxx.dtb"` | 这棵树的 dts/Makefile 只编 `.config` 里 `CONFIG_BUILTIN_DTB_NAME` 指定的那一个，路径会被重复拼接 | 先改 `.config` 的 `CONFIG_BUILTIN_DTB_NAME`，再整体 `make`；不要试图单编某个 dtb | 内核 4.19.190+ |
+| 编完找不到 `vmlinuz` | 产物在**源码根目录**（`ls vmlinuz`），不在 `arch/loongarch/boot/vmlinuz`；编译日志结尾有 `LD vmlinuz` / `STRIP vmlinuz` / `LD vmlinuz.efi` | 用 `ls -lh vmlinux vmlinuz vmlinuz.efi System.map` 在源码根目录确认 | 内核 4.19.190+ |
 
 ## 七、参考资料
 
@@ -183,5 +211,7 @@ ssh root@192.168.137.140 'mkdir -p /opt/ls_2k0300_env && \
 - [x] 把「远端授权」一行的掌握程度更新为"会用"，并回填本文件第二节的版本事实
 - [x] 接入 2K0300（久久派）交叉工具链 → `...-rc1.6`（gcc 8.3.0），并跑通文档 13~16 页的编译
 - [x] 板子上电、串口可用（COM4/115200）、虚拟机 → 板卡免密上传打通（`./build.sh` 一键完成）
+- [x] 第 16 页编译内核：DTB 改为久久派 WiFi 版，8 核 3 分 16 秒编出 `vmlinux` / `vmlinuz` / dtb
+- [ ] 第 17~19 页把 `vmlinuz` 更新到板卡 `/boot`（**先备份**原文件，再 `sync` + `reboot`，串口盯启动）
 - [ ] 查清 Windows ICS 的 DHCP 为什么不应答（UDP 67/68），争取让板卡与虚拟机都改回自动获取
 - [ ] 板卡外网：清掉那两条没有网关的默认路由，或关掉 connman 对 eth0 的管理
