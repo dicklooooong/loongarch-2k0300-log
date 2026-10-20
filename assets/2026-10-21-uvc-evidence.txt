@@ -1,0 +1,74 @@
+﻿# 2026-10-21 摄像头链路证据
+# 采集时间: 2026-10-21 01:30:48
+# 说明: "之后" 部分是换内核后从板子上实时采集的；"之前" 部分是排查时留下的原始输出。
+
+====================== 换内核【之前】 ======================
+（内核 4.19.190 #22 SMP Tue Jul 2 23:36:52 CST 2024）
+
+--- /proc/devices 里没有 video4linux ---
+$ (grep -i video /proc/devices)
+（无输出）
+
+--- /sys/class/video4linux 不存在 ---
+$ ls /sys/class/video4linux
+ls: cannot access '/sys/class/video4linux': No such file or directory
+
+--- 摄像头插着也没用（上一次排查的记录，见 ls2k0300-fix/uvc-probe.out）---
+Bus 001 Device 002: ID 0bda:3835   USB Camera
+ls: cannot access '/dev/video*': No such file or directory
+
+--- 内核符号里也没有 UVC ---
+$ grep -icE "video_device|v4l2" /proc/kallsyms
+3
+
+
+====================== 换内核【之后】 ======================
+（内核 4.19.190 #1 SMP Sat Oct 17 20:32:50 CST 2026，即 10/17 自己编译的版本）
+
+===== uname =====
+Linux LoongOS 4.19.190 #1 SMP Sat Oct 17 20:32:50 CST 2026 loongarch64 loongarch64 loongarch64 GNU/Linux
+
+===== /proc/devices (video 相关) =====
+ 81 video4linux
+
+===== /sys/class/video4linux =====
+video0
+video1
+
+===== kallsyms uvc =====
+9000000000a75940 T uvc_register_video_device
+9000000000a75ab0 t uvc_probe
+9000000000a7d4b0 T uvc_probe_video
+
+===== lsusb =====
+Bus 003 Device 001: ID 1d6b:0001
+Bus 001 Device 001: ID 1d6b:0002
+Bus 001 Device 002: ID 0bda:3835
+Bus 002 Device 001: ID 1d6b:0002
+
+===== 推流进程 =====
+   2159       1    2159 ?        43.1       02:19 ./E08_02_tcp_client_uvc_rgb_demo
+
+===== /tmp/cam.log =====
+Wait connect tcp server
+tcp_client ok
+find uvc camera Successfully.
+get uvc width = 160
+get uvc height = 120
+get uvc fps = 120
+get uvc auto exposure mode = 3
+
+
+====================== 摄像头能力枚举 ======================
+（用交叉编译的 /home/root/enum 查询，查询时需先 pkill -f E08_02 释放设备）
+
+$ /home/root/enum /dev/video0
+FMT Motion-JPEG (fourcc=MJPG)
+  640x480
+     120.00 fps
+  320x240
+     180.00 fps
+     120.00 fps
+  160x120
+     180.00 fps
+     120.00 fps
