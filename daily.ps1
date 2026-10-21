@@ -36,6 +36,11 @@ Write-Host '========== 每天记录 ==========' -ForegroundColor Cyan
 
 # ---------- 1. 准备今天的文件 ----------
 $today = Get-Date
+# 凌晨 6 点之前算作前一天（熬夜写的记录归到前一晚）
+if ($today.Hour -lt 6) {
+    $today = $today.AddDays(-1)
+    Write-Host ("[i] 现在 " + (Get-Date).ToString('HH:mm') + "，按规则归到前一天：" + $today.ToString('yyyy-MM-dd')) -ForegroundColor DarkGray
+}
 $relDir = Join-Path 'logs' (Join-Path $today.Year ('{0:D2}' -f $today.Month))
 $absDir = Join-Path $PSScriptRoot $relDir
 $file = Join-Path $absDir ($today.ToString('yyyy-MM-dd') + '.md')

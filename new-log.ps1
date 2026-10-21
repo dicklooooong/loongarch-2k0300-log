@@ -7,10 +7,19 @@
 #>
 [CmdletBinding()]
 param(
-    [datetime]$Date = (Get-Date)
+    [datetime]$Date
 )
 
 $ErrorActionPreference = 'Stop'
+
+# 凌晨 6 点之前算作前一天（熬夜写的记录归到前一晚）
+if (-not $PSBoundParameters.ContainsKey('Date')) {
+    $Date = Get-Date
+    if ($Date.Hour -lt 6) {
+        $Date = $Date.AddDays(-1)
+        Write-Host ("[i] 现在 " + (Get-Date).ToString('HH:mm') + "，按规则归到前一天：" + $Date.ToString('yyyy-MM-dd')) -ForegroundColor DarkGray
+    }
+}
 $root = $PSScriptRoot
 
 $relDir  = Join-Path 'logs' (Join-Path $Date.Year ('{0:D2}' -f $Date.Month))
